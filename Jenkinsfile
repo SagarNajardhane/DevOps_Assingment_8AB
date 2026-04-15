@@ -1,16 +1,19 @@
 pipeline {
-    agent any
+    agent { label 'windows' }
+
     environment {
-        DOCKER_HUB_USER = "sagar08082004" 
+        DOCKER_HUB_USER = "SagarNajardhane" 
         IMAGE_NAME = "app"
         DOCKER_HUB_CREDS = 'docker-hub-creds' 
     }
+
     stages {
         stage('Checkout') {
             steps {
                 checkout scm
             }
         }
+
         stage('Build Image') {
             steps {
                 script {
@@ -19,6 +22,7 @@ pipeline {
                 }
             }
         }
+
         stage('Push to Docker Hub') {
             steps {
                 script {
@@ -28,10 +32,14 @@ pipeline {
                         usernameVariable: 'DOCKER_USER'
                     )]) {
 
-                        bat "echo %DOCKER_PASS% | docker login -u %DOCKER_USER% --password-stdin"
-                        bat "docker push %DOCKER_HUB_USER%/%IMAGE_NAME%:%BUILD_NUMBER%"
-                        bat "docker push %DOCKER_HUB_USER%/%IMAGE_NAME%:latest"
-                        bat "docker logout"
+                        bat """
+                        echo %DOCKER_PASS%> pass.txt
+                        docker login -u %DOCKER_USER% --password-stdin < pass.txt
+                        docker push %DOCKER_HUB_USER%/%IMAGE_NAME%:%BUILD_NUMBER%
+                        docker push %DOCKER_HUB_USER%/%IMAGE_NAME%:latest
+                        docker logout
+                        del pass.txt
+                        """
                     }
                 }
             }
